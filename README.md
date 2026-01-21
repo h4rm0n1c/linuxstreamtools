@@ -5,6 +5,7 @@ A grab bag of Linux streaming-related tools and experiments. The repo root is a 
 ## Contents
 
 - `streamlinkbgm/`: Background music automation tooling for Streamlink + MPV, with docs and attribution.
+- `obs_stuff/`: OBS websocket helpers for meme triggers and cutaway gags, including `memen_demon` and "take my cut, please!".
 
 ## Repository structure
 
