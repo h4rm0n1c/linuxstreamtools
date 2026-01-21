@@ -1,0 +1,155 @@
+#!/bin/sh
+set -eu
+
+NAME="memen_demon"
+SCRIPT="$HOME/memen_demon.sh"
+WORKDIR="$HOME"
+
+PIDFILE="$HOME/.run/${NAME}.pid"
+LOGFILE="$HOME/.log/${NAME}.log"
+
+PW_DIR="$HOME/.config/memen_demon"
+PW_FILE="$PW_DIR/obs_password"
+
+# Default args (uses password file if present)
+ARGS=""
+if [ -r "$PW_FILE" ]; then
+  ARGS="--password-file $PW_FILE"
+fi
+
+is_running() {
+  [ -f "$PIDFILE" ] && kill -0 "$(cat "$PIDFILE" 2>/dev/null)" 2>/dev/null
+}
+
+do_start() {
+  if is_running; then
+    echo "$NAME already running (pid $(cat "$PIDFILE"))"
+    exit 0
+  fi
+  mkdir -p "$(dirname "$PIDFILE")" "$(dirname "$LOGFILE")"
+  cd "$WORKDIR"
+  # Re-evaluate args at start time (in case password file was just created/updated)
+  if [ -r "$PW_FILE" ]; then
+    ARGS="--password-file $PW_FILE"
+  else
+    ARGS=""
+  fi
+  setsid /bin/sh -lc "exec \"$SCRIPT\" $ARGS >>\"$LOGFILE\" 2>&1" </dev/null &
+  echo $! >"$PIDFILE"
+  echo "Started $NAME (pid $(cat "$PIDFILE"))"
+}
+
+do_stop() {
+  if ! [ -f "$PIDFILE" ]; then
+    echo "$NAME not running (no pidfile)"
+    exit 0
+  fi
+  PID="$(cat "$PIDFILE" 2>/dev/null || true)"
+  if [ -n "${PID:-}" ] && kill -0 "$PID" 2>/dev/null; then
+    kill "$PID" 2>/dev/null || true
+    for i in 1 2 3 4 5 6 7 8 9 10; do
+      kill -0 "$PID" 2>/dev/null || break
+      sleep 0.2
+    done
+    kill -9 "$PID" 2>/dev/null || true
+    echo "Stopped $NAME"
+  else
+    echo "$NAME not running (stale pidfile)"
+  fi
+  rm -f "$PIDFILE"
+}
+
+do_status() {
+  if is_running; then
+    echo "$NAME is running (pid $(cat "$PIDFILE"))"
+    exit 0
+  fi
+  echo "$NAME is NOT running"
+  exit 3
+}
+
+do_setpassword() {
+  mkdir -p "$PW_DIR"
+  umask 077
+
+  # If password supplied as argument, use it directly
+  if [ "${2:-}" != "" ]; then
+    pw1="$2"
+    pw2="$2"
+  else
+    echo "Enter OBS WebSocket password (will not echo):" >&2
+    stty -echo
+    IFS= read -r pw1 || pw1=""
+    stty echo
+    echo >&2
+
+    echo "Confirm password:" >&2
+    stty -echo
+    IFS= read -r pw2 || pw2=""
+    stty echo
+    echo >&2
+  fi
+
+  if [ -z "$pw1" ]; then
+    echo "Refusing: empty password." >&2
+    exit 1
+  fi
+  if [ "$pw1" != "$pw2" ]; then
+    echo "Passwords do not match." >&2
+    exit 1
+  fi
+
+  printf '%s\n' "$pw1" > "$PW_FILE"
+  chmod 600 "$PW_FILE"
+  echo "Wrote $PW_FILE (mode 600)." >&2
+
+  if is_running; then
+    echo "Restarting $NAME to apply new password..." >&2
+    do_stop
+    do_start
+  fi
+}
+
+
+
+do_showconfig() {
+  echo "SCRIPT=$SCRIPT"
+  echo "WORKDIR=$WORKDIR"
+  echo "PIDFILE=$PIDFILE"
+  echo "LOGFILE=$LOGFILE"
+  echo "PW_FILE=$PW_FILE"
+  if [ -r "$PW_FILE" ]; then
+    echo "PW_FILE_STATUS=readable"
+  else
+    echo "PW_FILE_STATUS=missing_or_unreadable"
+  fi
+}
+
+do_send() {
+  SOCK="${SOCK:-/tmp/obs_meme_daemon.sock}"
+  [ "${2:-}" != "" ] || { echo "Usage: $0 send <line>" >&2; exit 2; }
+  shift
+  payload="$1"
+  shift || true
+  while [ "${1:-}" != "" ]; do
+    payload="$payload $1"
+    shift || true
+  done
+  printf '%s\n' "$payload" | socat - UNIX-CONNECT:"$SOCK"
+}
+
+
+case "${1:-}" in
+  start) do_start ;;
+  stop) do_stop ;;
+  send) do_send "$@" ;;
+  restart) do_stop; do_start ;;
+  status) do_status ;;
+  logs) tail -n 200 -f "$LOGFILE" ;;
+  setpassword) do_setpassword "$@" ;;
+  showconfig) do_showconfig ;;
+  *)
+    echo "Usage: $0 {start|stop|send|restart|status|logs|setpassword|showconfig}" >&2
+    exit 2
+    ;;
+esac
