@@ -40,9 +40,9 @@ If you need to target another scene, send `meme_name@scene_name`.
 ### take my cut, please!
 
 1. Create a scene named `itstinks` (or pass `--itstinks-scene`).
-2. Add a Media Source named `it_stinks_clip` and make sure it plays the Jay Sherman clip.
+2. Add a Media Source named `it_stinks_clip` and make sure it plays the Jay Sherman clip. The default configuration expects the ~7-second cut from "The Critic" (often sourced from https://www.youtube.com/watch?v=xIx8JNoyRq8), so download a local copy and point the Media Source to that file.
 3. Add a Source Clone input named `PrevSceneClone` (input type: Source Clone). The script will update its target to match the current program scene.
-4. Add a scene item named `PreviousScene` that displays the clone in the layout you want to roast. This is the layer hidden at the `--hide-delay` timestamp.
+4. Add a scene item named `PreviousScene` that displays the clone in the layout you want to roast. Keep it positioned above the clip (or otherwise ordered the way you want it to appear), because it is the layer hidden at the `--hide-delay` timestamp.
 
 Run the script:
 
