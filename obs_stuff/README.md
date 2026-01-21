@@ -56,9 +56,9 @@ You also need obs-websocket enabled in OBS (v5+).
 
 1. Enable obs-websocket (Tools → WebSocket Server Settings).
 2. Create a scene named `itstinks` (or pass `--itstinks-scene`).
-3. Add a Media Source named `it_stinks_clip` containing the Jay Sherman clip.
+3. Add a Media Source named `it_stinks_clip` containing the Jay Sherman clip. The default config expects the ~7-second cut from "The Critic" (commonly sourced from https://www.youtube.com/watch?v=xIx8JNoyRq8), so download a local copy and point the Media Source at that file.
 4. Add a Source Clone input named `PrevSceneClone` (input type: Source Clone) and set it to your current program scene. The script will update the clone target dynamically.
-5. Add a scene item named `PreviousScene` that displays the clone above/below the clip as desired. This is the layer the script hides at the `--hide-delay` timestamp.
+5. Add a scene item named `PreviousScene` that displays the clone above/below the clip as desired. Keep its order/position set the way you want it to appear, since this is the layer the script hides at the `--hide-delay` timestamp.
 
 **Usage**
 
