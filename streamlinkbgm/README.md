@@ -136,6 +136,28 @@ If your MPV IPC is sluggish, the watcher retries before reconnecting. You can tu
 MPV_IPC_TIMEOUT=3 WATCH_RETRY_LIMIT=8 ./streamlink_3.sh restart
 ```
 
+## YouTube cookies (optional but recommended)
+
+Some YouTube streams require authenticated cookies. The MPV launch in `streamlink_3.sh` always points to
+`$HOME/cookies.txt`, so the easiest path is to generate that file once and keep it updated when your login changes.
+
+**Fastest option (browser extension):**
+
+1. Install a cookies exporter extension for your browser (e.g., “Get cookies.txt” or “cookies.txt”).
+2. Sign in to YouTube in that browser.
+3. Export cookies in Netscape format to `~/cookies.txt`.
+4. If you refresh your login, re-export and overwrite `~/cookies.txt`.
+
+**CLI option (yt-dlp):**
+
+If you already use `yt-dlp`, you can export cookies from a browser profile:
+
+```bash
+yt-dlp --cookies-from-browser firefox --cookies "$HOME/cookies.txt" --skip-download "https://www.youtube.com/"
+```
+
+Replace `firefox` with `chromium`, `chrome`, or another supported browser if needed.
+
 ## Attribution
 
 See `ATTRIBUTION.md`.
