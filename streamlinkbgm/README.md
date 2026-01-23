@@ -116,6 +116,14 @@ These commands talk to MPV over its IPC socket:
 ./streamlink_3.sh what
 ```
 
+## Troubleshooting track info updates
+
+The OBS track title updates come from the watcher process (`streamlink_3.sh watch`). If OBS stops updating, confirm the watcher is running and restart if needed:
+
+```bash
+pgrep -f "streamlink_3.sh watch" || ./streamlink_3.sh restart
+```
+
 ## Attribution
 
 See `ATTRIBUTION.md`.

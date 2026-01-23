@@ -5,6 +5,8 @@ set -euo pipefail
 SINK_NAME="SET_MPV_TO_THIS"
 SOURCE_NAME="Streamlink_BGM"
 SCREEN_NAME="streamlink_bgm"
+SCRIPT_NAME="$(basename "$0")"
+WATCH_PATTERN="${SCRIPT_NAME} watch"
 
 CONFIG_DIR="${HOME}/.config"
 CONFIG_URL_FILE="${CONFIG_DIR}/streamlink_bgm_url"
@@ -211,7 +213,7 @@ mpv_track_watcher() {
 }
 
 start_watcher() {
-  if pgrep -f "streamlink_2.sh watch" >/dev/null 2>&1; then
+  if pgrep -f "$WATCH_PATTERN" >/dev/null 2>&1; then
     return
   fi
   "$0" watch &
@@ -332,7 +334,7 @@ stop_mpv() {
   [ -S "$IPC" ] && rm -f "$IPC"
   announce_clear
 
-  pkill -f "streamlink_2.sh watch" 2>/dev/null || true
+  pkill -f "$WATCH_PATTERN" 2>/dev/null || true
 }
 
 stop() {
