@@ -20,6 +20,8 @@ LISTEN_MODULE_ID_FILE="${CONFIG_DIR}/streamlink_bgm_listen_module_id"
 
 IPC="/tmp/mpv_bgm.sock"
 MEME_SOCK="/tmp/obs_meme_daemon.sock"
+MPV_IPC_TIMEOUT="${MPV_IPC_TIMEOUT:-2}"
+WATCH_RETRY_LIMIT="${WATCH_RETRY_LIMIT:-5}"
 
 mkdir -p "${CONFIG_DIR}"
 
@@ -177,9 +179,27 @@ announce_clear() {
 }
 
 # === Track watcher ===
+mpv_query_title() {
+  local ipc="$1"
+  local resp=""
+
+  if command -v timeout >/dev/null 2>&1; then
+    resp=$(printf '{"command":["get_property","media-title"]}\n' \
+      | timeout "${MPV_IPC_TIMEOUT}s" socat - UNIX-CONNECT:"$ipc" 2>/dev/null || true)
+  else
+    resp=$(printf '{"command":["get_property","media-title"]}\n' \
+      | socat - UNIX-CONNECT:"$ipc" 2>/dev/null || true)
+  fi
+
+  printf '%s\n' "$resp" \
+    | jq -r 'select(.error=="success") | .data // empty' 2>/dev/null \
+    | head -n1
+}
+
 mpv_track_watcher() {
   local ipc="$IPC"
   local last=""
+  local failures=0
 
   while true; do
     while [ ! -S "$ipc" ]; do
@@ -189,19 +209,21 @@ mpv_track_watcher() {
     echo "[TRACK] watcher attached to $ipc"
 
     while [ -S "$ipc" ]; do
-      resp=$(printf '{"command":["get_property","media-title"]}\n' \
-        | socat - UNIX-CONNECT:"$ipc" 2>/dev/null || true)
+      title="$(mpv_query_title "$ipc")"
 
-      title=$(
-        printf '%s\n' "$resp" \
-        | jq -r 'select(.error=="success") | .data // empty' 2>/dev/null \
-        | head -n1
-      )
-
-      if [ -n "$title" ] && [ "$title" != "$last" ]; then
-        echo "[TRACK] Now playing: $title"
-        announce_track "$title"
-        last="$title"
+      if [ -n "$title" ]; then
+        failures=0
+        if [ "$title" != "$last" ]; then
+          echo "[TRACK] Now playing: $title"
+          announce_track "$title"
+          last="$title"
+        fi
+      else
+        failures=$((failures + 1))
+        if [ "$failures" -ge "$WATCH_RETRY_LIMIT" ]; then
+          echo "[TRACK] no IPC response after ${failures} polls; reconnecting"
+          break
+        fi
       fi
 
       sleep 2
@@ -209,6 +231,7 @@ mpv_track_watcher() {
 
     announce_clear
     last=""
+    failures=0
   done
 }
 

@@ -131,6 +131,12 @@ The OBS track title updates come from the watcher process (`streamlink_3.sh watc
 pgrep -f "streamlink_3.sh watch" || ./streamlink_3.sh restart
 ```
 
+If your MPV IPC is sluggish, the watcher retries before reconnecting. You can tune the polling timeout (seconds) and retry limit with environment variables:
+
+```bash
+MPV_IPC_TIMEOUT=3 WATCH_RETRY_LIMIT=8 ./streamlink_3.sh restart
+```
+
 ## Attribution
 
 See `ATTRIBUTION.md`.
