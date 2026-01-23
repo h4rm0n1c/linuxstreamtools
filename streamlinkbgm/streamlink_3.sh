@@ -197,6 +197,7 @@ mpv_query_title() {
 }
 
 mpv_track_watcher() {
+  trap '' HUP
   local ipc="$IPC"
   local last=""
   local failures=0
@@ -239,7 +240,11 @@ start_watcher() {
   if pgrep -f "$WATCH_PATTERN" >/dev/null 2>&1; then
     return
   fi
-  "$0" watch &
+  if command -v setsid >/dev/null 2>&1; then
+    setsid "$0" watch >/dev/null 2>&1 < /dev/null &
+  else
+    nohup "$0" watch >/dev/null 2>&1 &
+  fi
 }
 
 # === Actions ===

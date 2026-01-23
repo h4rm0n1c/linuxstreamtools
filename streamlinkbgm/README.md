@@ -39,11 +39,10 @@ Start the background music pipeline:
 ./streamlink_3.sh start
 ```
 
-`start` already launches the track watcher in the background, so you do **not** need to call `watch` separately for normal use. If you do need to run the watcher manually, run it in the background so it does not block your shell or scripts:
+`start` already launches the track watcher in the background (detached from the launching terminal), so you do **not** need to call `watch` separately for normal use. If you do need to run the watcher manually, keep it in the background so it does not block your shell or scripts:
 
 ```bash
 ./streamlink_3.sh watch >/tmp/streamlinkbgm.watch.log 2>&1 &
-disown
 ```
 
 Stop it when you are done:
