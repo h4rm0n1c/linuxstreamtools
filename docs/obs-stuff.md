@@ -37,6 +37,24 @@ If you need to target another scene, send `meme_name@scene_name`.
 - `streamlink_3.sh` typically drives the `BGM` input and `CurrentTrack` text updates for background music.
 - When `memen_demon` detects a meme or NetTTS speech, it mutes `BGM`. Once everything is idle, it restores the prior mute state so Streamlink background music resumes as before.
 
+### Track text troubleshooting
+
+If `CurrentTrack` is no longer updating in OBS, validate each piece of the chain:
+
+1. Ensure the text source exists in OBS (default name: `CurrentTrack`).
+2. Confirm `memen_demon` is running and the socket exists:
+   ```sh
+   test -S /tmp/obs_meme_daemon.sock && printf "TRACK test\n" | socat - UNIX-CONNECT:/tmp/obs_meme_daemon.sock
+   ```
+3. Make sure the Streamlink watcher is active:
+   ```sh
+   pgrep -f "streamlink_3.sh watch" || ./streamlink_3.sh restart
+   ```
+4. Verify MPV IPC is responding:
+   ```sh
+   ./streamlink_3.sh what
+   ```
+
 ### take my cut, please!
 
 1. Create a scene named `itstinks` (or pass `--itstinks-scene`).

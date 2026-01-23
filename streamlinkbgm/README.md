@@ -116,6 +116,28 @@ These commands talk to MPV over its IPC socket:
 ./streamlink_3.sh what
 ```
 
+## Troubleshooting track info updates
+
+The OBS track title updates come from the watcher process (`streamlink_3.sh watch`) sending `TRACK` commands to the `memen_demon` socket. If OBS stops updating, check each hop:
+
+```bash
+pgrep -f "streamlink_3.sh watch" || ./streamlink_3.sh restart
+```
+
+Verify MPV is answering the IPC queries:
+
+```bash
+./streamlink_3.sh what
+```
+
+Confirm `memen_demon` is running and accepting track updates:
+
+```bash
+test -S /tmp/obs_meme_daemon.sock && printf "TRACK test\n" | socat - UNIX-CONNECT:/tmp/obs_meme_daemon.sock
+```
+
+Also make sure OBS has a text source named `CurrentTrack` in the target scene (the daemon updates that source by default).
+
 ## Attribution
 
 See `ATTRIBUTION.md`.

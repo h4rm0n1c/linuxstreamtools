@@ -5,6 +5,8 @@ set -euo pipefail
 SINK_NAME="SET_MPV_TO_THIS"
 SOURCE_NAME="Streamlink_BGM"
 SCREEN_NAME="streamlink_bgm"
+SCRIPT_NAME="$(basename "$0")"
+WATCH_PATTERN="${SCRIPT_NAME} watch"
 
 CONFIG_DIR="${HOME}/.config"
 CONFIG_URL_FILE="${CONFIG_DIR}/streamlink_bgm_url"
@@ -161,6 +163,21 @@ mpv_send() {
   printf '%s\n' "$cmd" | socat - UNIX-CONNECT:"$IPC" >/dev/null 2>&1 || true
 }
 
+mpv_query() {
+  local cmd="$1"
+  [ -S "$IPC" ] || { echo "ERROR: MPV IPC socket not ready: $IPC" >&2; return 1; }
+  printf '%s\n' "$cmd" | socat - UNIX-CONNECT:"$IPC" 2>/dev/null || true
+}
+
+mpv_get_property() {
+  local prop="$1"
+  local resp
+  resp="$(mpv_query "{\"command\":[\"get_property\",\"$prop\"]}")"
+  printf '%s\n' "$resp" \
+    | jq -r 'if .error=="success" then .data else empty end' 2>/dev/null \
+    | head -n1
+}
+
 announce_track() {
   local title="$1"
   if [ -S "$MEME_SOCK" ]; then
@@ -178,6 +195,7 @@ announce_clear() {
 mpv_track_watcher() {
   local ipc="$IPC"
   local last=""
+  local warned_meme_sock="0"
 
   while true; do
     while [ ! -S "$ipc" ]; do
@@ -187,6 +205,11 @@ mpv_track_watcher() {
     echo "[TRACK] watcher attached to $ipc"
 
     while [ -S "$ipc" ]; do
+      if [ "$warned_meme_sock" = "0" ] && [ ! -S "$MEME_SOCK" ]; then
+        echo "[TRACK] WARN: memen_demon socket not found at $MEME_SOCK"
+        warned_meme_sock="1"
+      fi
+
       resp=$(printf '{"command":["get_property","media-title"]}\n' \
         | socat - UNIX-CONNECT:"$ipc" 2>/dev/null || true)
 
@@ -207,11 +230,12 @@ mpv_track_watcher() {
 
     announce_clear
     last=""
+    warned_meme_sock="0"
   done
 }
 
 start_watcher() {
-  if pgrep -f "streamlink_2.sh watch" >/dev/null 2>&1; then
+  if pgrep -f "$WATCH_PATTERN" >/dev/null 2>&1; then
     return
   fi
   "$0" watch &
@@ -332,7 +356,7 @@ stop_mpv() {
   [ -S "$IPC" ] && rm -f "$IPC"
   announce_clear
 
-  pkill -f "streamlink_2.sh watch" 2>/dev/null || true
+  pkill -f "$WATCH_PATTERN" 2>/dev/null || true
 }
 
 stop() {
@@ -458,8 +482,19 @@ vol() {
   mpv_send '{"command":["add","volume",'$d']}'
 }
 what() {
-  mpv_send '{"command":["get_property","media-title"]}'
-  mpv_send '{"command":["get_property","path"]}'
+  local title path
+  title="$(mpv_get_property "media-title")"
+  path="$(mpv_get_property "path")"
+  if [ -n "$title" ]; then
+    echo "title: $title"
+  else
+    echo "title: (unknown)"
+  fi
+  if [ -n "$path" ]; then
+    echo "path: $path"
+  else
+    echo "path: (unknown)"
+  fi
 }
 
 case "${1-}" in
