@@ -39,6 +39,13 @@ Start the background music pipeline:
 ./streamlink_3.sh start
 ```
 
+`start` already launches the track watcher in the background, so you do **not** need to call `watch` separately for normal use. If you do need to run the watcher manually, run it in the background so it does not block your shell or scripts:
+
+```bash
+./streamlink_3.sh watch >/tmp/streamlinkbgm.watch.log 2>&1 &
+disown
+```
+
 Stop it when you are done:
 
 ```bash
@@ -118,7 +125,7 @@ These commands talk to MPV over its IPC socket:
 
 ## Troubleshooting track info updates
 
-The OBS track title updates come from the watcher process (`streamlink_3.sh watch`). If OBS stops updating, confirm the watcher is running and restart if needed:
+The OBS track title updates come from the watcher process (`streamlink_3.sh watch`, started automatically by `start`). If OBS stops updating, confirm the watcher is running and restart if needed:
 
 ```bash
 pgrep -f "streamlink_3.sh watch" || ./streamlink_3.sh restart
