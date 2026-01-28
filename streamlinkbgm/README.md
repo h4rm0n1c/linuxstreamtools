@@ -101,6 +101,8 @@ If you want to hear the BGM locally while still outputting the remapped OBS sour
 ./streamlink_3.sh listen 2   # or use a sink name
 ```
 
+The listen loopback is pinned to the chosen sink; if that sink disappears (USB headset unplugged, etc.), re-run `listen` after it returns.
+
 Disable local listening:
 
 ```bash

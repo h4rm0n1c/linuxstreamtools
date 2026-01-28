@@ -105,6 +105,8 @@ listen_apply_now() {
     source="${SINK_NAME}.monitor" \
     sink="$target" \
     latency_msec=60 \
+    source_dont_move=true \
+    sink_dont_move=true \
     sink_input_properties="media.name=Streamlink_BGM_listen" \
     source_output_properties="media.name=Streamlink_BGM_listen" \
     2>/dev/null || true)"
