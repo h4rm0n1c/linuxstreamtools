@@ -6,7 +6,8 @@ exec </dev/null
 
 YAD="$(command -v yad)"
 SENDER="$HOME/.local/bin/mpv_ipc_send"
-BGM_CTL="$HOME/streamlink_3.sh"   # <-- point this at streamlink_3.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BGM_CTL="$SCRIPT_DIR/streamlink_3.sh"   # <-- point this at streamlink_3.sh
 
 [ -x "$YAD" ] || { echo "yad not found"; exit 1; }
 [ -x "$SENDER" ] || { echo "mpv_ipc_send missing"; exit 1; }
