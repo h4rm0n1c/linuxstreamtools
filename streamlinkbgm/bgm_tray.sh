@@ -5,10 +5,11 @@ set -euo pipefail
 exec </dev/null
 
 YAD="$(command -v yad)"
-SENDER="$HOME/.local/bin/mpv_ipc_send"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BGM_CTL="$SCRIPT_DIR/streamlink_3.sh"   # <-- point this at streamlink_3.sh
-SOURCES_FILE="$HOME/.config/streamlink_bgm_sources"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
+SENDER="${SENDER:-$HOME/.local/bin/mpv_ipc_send}"
+BGM_CTL="${BGM_CTL:-$SCRIPT_DIR/streamlink_3.sh}"   # <-- point this at streamlink_3.sh
+SOURCES_FILE="${SOURCES_FILE:-$CONFIG_DIR/streamlink_bgm_sources}"
 
 [ -x "$YAD" ] || { echo "yad not found"; exit 1; }
 [ -x "$SENDER" ] || { echo "mpv_ipc_send missing"; exit 1; }
