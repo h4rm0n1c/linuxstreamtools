@@ -54,6 +54,13 @@ The tray menu is optional and provides quick access to playback controls and URL
 ./bgm_tray.sh
 ```
 
+To launch it without tying up your terminal:
+
+```bash
+nohup ./bgm_tray.sh >/tmp/bgm_tray.log 2>&1 &
+disown
+```
+
 ### Tray overrides
 
 You can override paths used by the tray menu:

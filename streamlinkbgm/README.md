@@ -143,6 +143,13 @@ These commands talk to MPV over its IPC socket:
 ./bgm_tray.sh
 ```
 
+To launch it without tying up your terminal:
+
+```bash
+nohup ./bgm_tray.sh >/tmp/bgm_tray.log 2>&1 &
+disown
+```
+
 ### Path overrides
 
 The tray script follows XDG paths and allows overrides:
