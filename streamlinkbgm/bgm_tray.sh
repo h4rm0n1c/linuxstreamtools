@@ -30,14 +30,7 @@ choose_bgm_url() {
   fi
 
   URL="$(
-    awk "NF && \$1 !~ /^#/" "$SOURCES_FILE" | awk '{
-      raw=$0
-      display=$0
-      gsub(/&/, "\\&amp;", display)
-      gsub(/</, "\\&lt;", display)
-      gsub(/>/, "\\&gt;", display)
-      printf "%s|%s\n", display, raw
-    }' | yad --list --column="URL" --column="RAW" --hide-column=2 --no-headers --print-column=2 --separator="" --width=900 --height=400 --title="Choose BGM URL" --center
+    awk "NF && \$1 !~ /^#/" "$SOURCES_FILE" | yad --list --column="URL" --no-markup --no-headers --print-column=1 --separator="" --width=900 --height=400 --title="Choose BGM URL" --center
   )"
   if [ -n "$URL" ]; then
     "$BGM_CTL" seturl "$URL"
