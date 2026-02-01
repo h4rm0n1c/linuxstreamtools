@@ -61,6 +61,7 @@ You can override paths used by the tray menu:
 - `SENDER` — path to `mpv_ipc_send` (defaults to `~/.local/bin/mpv_ipc_send`)
 - `BGM_CTL` — path to `streamlink_3.sh`
 - `SOURCES_FILE` — path to the sources list
+- `IPC_PATH` — path to the MPV IPC socket (defaults to `/tmp/mpv_bgm.sock`)
 
 Example:
 
@@ -68,8 +69,17 @@ Example:
 SENDER="$HOME/bin/mpv_ipc_send" \
 BGM_CTL="$HOME/bin/streamlink_3.sh" \
 SOURCES_FILE="$HOME/.config/streamlink_bgm_sources" \
+IPC_PATH="/tmp/mpv_bgm.sock" \
 ./bgm_tray.sh
 ```
+
+### Tray icon status
+
+The tray icon updates based on MPV state:
+
+- Playing: `media-playback-start`
+- Paused: `media-playback-pause` (requires `socat` + `jq`)
+- Stopped / MPV not running: `media-playback-stop`
 
 ## Common commands
 

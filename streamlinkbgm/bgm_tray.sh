@@ -10,6 +10,7 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
 SENDER="${SENDER:-$HOME/.local/bin/mpv_ipc_send}"
 BGM_CTL="${BGM_CTL:-$SCRIPT_DIR/streamlink_3.sh}"   # <-- point this at streamlink_3.sh
 SOURCES_FILE="${SOURCES_FILE:-$CONFIG_DIR/streamlink_bgm_sources}"
+IPC_PATH="${IPC_PATH:-/tmp/mpv_bgm.sock}"
 
 [ -x "$YAD" ] || { echo "yad not found"; exit 1; }
 [ -x "$SENDER" ] || { echo "mpv_ipc_send missing"; exit 1; }
@@ -73,6 +74,57 @@ export -f delete_bgm_url
 export -f clean_bgm_urls
 export -f edit_bgm_url_list
 
+get_mpv_state() {
+  if [ ! -S "$IPC_PATH" ]; then
+    printf '%s\n' "stopped"
+    return 0
+  fi
+
+  if command -v socat >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
+    local response paused
+    response="$(printf '{"command":["get_property","pause"]}\n' | socat -t 0.2 - "UNIX-CONNECT:${IPC_PATH}" 2>/dev/null || true)"
+    paused="$(printf '%s' "$response" | jq -r '.data' 2>/dev/null || true)"
+    if [ "$paused" = "true" ]; then
+      printf '%s\n' "paused"
+      return 0
+    fi
+    if [ "$paused" = "false" ]; then
+      printf '%s\n' "playing"
+      return 0
+    fi
+  fi
+
+  printf '%s\n' "playing"
+}
+
+icon_loop() {
+  local last_state=""
+  while true; do
+    local state icon tooltip
+    state="$(get_mpv_state)"
+    if [ "$state" != "$last_state" ]; then
+      case "$state" in
+        paused)
+          icon="media-playback-pause"
+          tooltip="BGM Controller (paused)"
+          ;;
+        stopped)
+          icon="media-playback-stop"
+          tooltip="BGM Controller (stopped)"
+          ;;
+        *)
+          icon="media-playback-start"
+          tooltip="BGM Controller (playing)"
+          ;;
+      esac
+      printf 'icon:%s\n' "$icon"
+      printf 'tooltip:%s\n' "$tooltip"
+      last_state="$state"
+    fi
+    sleep 2
+  done
+}
+
 # Right-click menu: use absolute commands; '---' makes separators in yad
 #MENU="Next Song!$SENDER next|Previous Song!$SENDER prev|Pause/Resume!$SENDER toggle|Shuffle!$SENDER shuffle|---|Seek +10s!$SENDER seekf|Seek -10s!$SENDER seekb|Volume +5!$SENDER volup|Volume -5!$SENDER voldn|---|Set BGM URL...!bash -lc 'URL=\$(yad --entry --width=700 --title=\"Set BGM URL\" --text=\"Enter YouTube or playlist URL:\"); [ -n \"\$URL\" ] && \"\$BGM_CTL\" seturl \"\$URL\"'|Delete BGM URL...!bash -lc 'URL=\$(yad --entry --width=700 --title=\"Delete BGM URL\" --text=\"Enter URL to remove (exact match in sources file):\"); [ -n \"\$URL\" ] && \"\$BGM_CTL\" delurl \"\$URL\"'|Clean duplicate URLs!bash -lc '\"$BGM_CTL\" cleandupes'|---|Open in Browser!$SENDER open|Quit Tray!bash -lc 'kill $$'"
 # Right-click menu: use absolute commands; '---' makes separators in yad
@@ -86,7 +138,8 @@ MENU="Next Song!$SENDER next|Previous Song!$SENDER prev|Pause/Resume!$SENDER tog
 
 # Left-click toggles pause/resume directly via the sender
 exec "$YAD" --notification \
+  --listen \
   --image=media-playback-start \
   --text="BGM Controller" \
   --command="$SENDER toggle" \
-  --menu="$MENU"
+  --menu="$MENU" < <(icon_loop)

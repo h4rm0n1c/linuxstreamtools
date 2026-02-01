@@ -135,6 +135,7 @@ These commands talk to MPV over its IPC socket:
 
 - `yad`
 - `mpv_ipc_send` (used by the tray menu to talk to MPV). Put it in `~/.local/bin/mpv_ipc_send` or set `SENDER=/path/to/mpv_ipc_send` before starting the tray script.
+- Optional: `socat` + `jq` (used to detect paused state for the tray icon)
 
 ### Run
 
@@ -150,14 +151,24 @@ The tray script follows XDG paths and allows overrides:
 - `SOURCES_FILE` (defaults to `$XDG_CONFIG_HOME/streamlink_bgm_sources`)
 - `BGM_CTL` (defaults to the local `streamlink_3.sh`)
 - `SENDER` (defaults to `~/.local/bin/mpv_ipc_send`)
+- `IPC_PATH` (defaults to `/tmp/mpv_bgm.sock`)
 
 Example:
 
 ```bash
 SOURCES_FILE="$HOME/.config/streamlink_bgm_sources" \
 SENDER="$HOME/bin/mpv_ipc_send" \
+IPC_PATH="/tmp/mpv_bgm.sock" \
 ./bgm_tray.sh
 ```
+
+### Tray icon status
+
+The tray icon updates based on MPV state:
+
+- Playing: `media-playback-start`
+- Paused: `media-playback-pause` (requires `socat` + `jq`)
+- Stopped / MPV not running: `media-playback-stop`
 
 ## Troubleshooting track info updates
 
