@@ -1,6 +1,6 @@
 # streamlinkbgm
 
-Background music automation for Streamlink + MPV. The primary entry point is `streamlink_3.sh`, which creates a PipeWire/PulseAudio null sink for MPV, exposes a remapped source for OBS, and manages playback in a detached `screen` session.
+Background music automation for Streamlink + MPV. The primary entry point is `streamlink_3.sh`, which creates a PipeWire/PulseAudio null sink for MPV, exposes a remapped source for OBS, and manages playback in a detached `screen` session. Optional: use `bgm_tray.sh` to control playback from a YAD tray menu.
 
 ## Requirements
 
@@ -10,12 +10,13 @@ Background music automation for Streamlink + MPV. The primary entry point is `st
 - `screen`
 - `jq`
 - `socat`
+- Optional: `yad` (for the tray controller)
 
 ## Install prerequisites (Debian/Devuan)
 
 ```bash
 sudo apt update
-sudo apt install mpv streamlink screen jq socat pipewire-pulse
+sudo apt install mpv streamlink screen jq socat pipewire-pulse yad
 ```
 
 If you are using PulseAudio instead of PipeWire, install `pulseaudio` instead of `pipewire-pulse`.
@@ -57,9 +58,11 @@ Check status:
 ./streamlink_3.sh status
 ```
 
+For a longer setup guide, see `docs/streamlinkbgm.md` in the repository root.
+
 ## Configuration files
 
-The script stores settings in `~/.config`:
+The script stores settings in your XDG config directory (defaults to `~/.config`). You can override the location by exporting `XDG_CONFIG_HOME`:
 
 - `streamlink_bgm_url` — the last fixed URL used with `seturl`.
 - `streamlink_bgm_sources` — one URL per line (playlists or videos). Blank lines and `#` comments are ignored.
@@ -123,6 +126,56 @@ These commands talk to MPV over its IPC socket:
 ./streamlink_3.sh vol -5
 ./streamlink_3.sh what
 ```
+
+## Tray controller (optional)
+
+`bgm_tray.sh` provides a YAD tray menu for quick control and URL management.
+
+### Requirements
+
+- `yad`
+- `mpv_ipc_send` (used by the tray menu to talk to MPV). Put it in `~/.local/bin/mpv_ipc_send` or set `SENDER=/path/to/mpv_ipc_send` before starting the tray script.
+- Optional: `socat` + `jq` (used to detect paused state for the tray icon)
+
+### Run
+
+```bash
+./bgm_tray.sh
+```
+
+To launch it without tying up your terminal:
+
+```bash
+nohup ./bgm_tray.sh >/tmp/bgm_tray.log 2>&1 &
+disown
+```
+
+### Path overrides
+
+The tray script follows XDG paths and allows overrides:
+
+- `XDG_CONFIG_HOME` (defaults to `~/.config`)
+- `SOURCES_FILE` (defaults to `$XDG_CONFIG_HOME/streamlink_bgm_sources`)
+- `BGM_CTL` (defaults to the local `streamlink_3.sh`)
+- `SENDER` (defaults to `~/.local/bin/mpv_ipc_send`)
+- `IPC_PATH` (defaults to `/tmp/mpv_bgm.sock`)
+
+Example:
+
+```bash
+SOURCES_FILE="$HOME/.config/streamlink_bgm_sources" \
+SENDER="$HOME/bin/mpv_ipc_send" \
+IPC_PATH="/tmp/mpv_bgm.sock" \
+./bgm_tray.sh
+```
+
+### Tray icon status
+
+The tray icon updates based on MPV state:
+
+- Playing: `media-playback-start`
+- Paused: `media-playback-pause` (requires `socat` + `jq`)
+- Stopped / MPV not running: `media-playback-stop`
 
 ## Troubleshooting track info updates
 
