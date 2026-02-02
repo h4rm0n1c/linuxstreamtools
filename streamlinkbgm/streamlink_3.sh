@@ -8,7 +8,7 @@ SCREEN_NAME="streamlink_bgm"
 SCRIPT_NAME="$(basename "$0")"
 WATCH_PATTERN="${SCRIPT_NAME} watch"
 
-CONFIG_DIR="${HOME}/.config"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
 CONFIG_URL_FILE="${CONFIG_DIR}/streamlink_bgm_url"
 SOURCES_FILE="${CONFIG_DIR}/streamlink_bgm_sources"
 MODE_FILE="${CONFIG_DIR}/streamlink_bgm_mode"
