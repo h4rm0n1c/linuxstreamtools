@@ -62,6 +62,8 @@ nohup ./bgm_tray.sh >/tmp/bgm_tray.log 2>&1 &
 disown
 ```
 
+`Choose BGM URL...` opens a list picker that displays source titles (via `yt-dlp`, with URL fallback) and pre-selects the currently active URL from `streamlink_bgm_url`.
+
 ### Tray overrides
 
 You can override paths used by the tray menu:

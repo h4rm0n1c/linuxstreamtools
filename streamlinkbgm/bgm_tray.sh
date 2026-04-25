@@ -10,6 +10,7 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
 SENDER="${SENDER:-$SCRIPT_DIR/mpv_ipc_send}"
 BGM_CTL="${BGM_CTL:-$SCRIPT_DIR/streamlink_3.sh}"   # <-- point this at streamlink_3.sh
 SOURCES_FILE="${SOURCES_FILE:-$CONFIG_DIR/streamlink_bgm_sources}"
+CONFIG_URL_FILE="${CONFIG_URL_FILE:-$CONFIG_DIR/streamlink_bgm_url}"
 IPC_PATH="${IPC_PATH:-/tmp/mpv_bgm.sock}"
 
 [ -x "$YAD" ] || { echo "yad not found"; exit 1; }
@@ -19,6 +20,31 @@ IPC_PATH="${IPC_PATH:-/tmp/mpv_bgm.sock}"
 # Export so bash -lc from the menu can see it
 export BGM_CTL
 export SOURCES_FILE
+
+read_current_url() {
+  if [ -f "$CONFIG_URL_FILE" ]; then
+    sed -n '1p' "$CONFIG_URL_FILE"
+  fi
+}
+
+resolve_source_title() {
+  local url="$1"
+  local title=""
+
+  if command -v yt-dlp >/dev/null 2>&1; then
+    if command -v timeout >/dev/null 2>&1; then
+      title="$(timeout 8s yt-dlp --flat-playlist --playlist-end 1 --print "%(playlist_title,fulltitle,title)s" "$url" 2>/dev/null | sed -n '1p' || true)"
+    else
+      title="$(yt-dlp --flat-playlist --playlist-end 1 --print "%(playlist_title,fulltitle,title)s" "$url" 2>/dev/null | sed -n '1p' || true)"
+    fi
+  fi
+
+  if [ -z "$title" ]; then
+    title="$url"
+  fi
+
+  printf '%s\n' "$title"
+}
 
 choose_bgm_url() {
   if [ ! -f "$SOURCES_FILE" ]; then
@@ -31,16 +57,50 @@ choose_bgm_url() {
     return 0
   fi
 
-  URL="$(
-    awk "NF && \$1 !~ /^#/" "$SOURCES_FILE" | yad --list --column="URL" --no-markup --no-headers --print-column=1 --separator="" --width=900 --height=400 --title="Choose BGM URL" --center
+  local current_url selected selected_url tmpfile
+  current_url="$(read_current_url)"
+  tmpfile="$(mktemp)"
+
+  while IFS= read -r url; do
+    local title active
+    [ -n "$url" ] || continue
+    title="$(resolve_source_title "$url")"
+    active="FALSE"
+    if [ -n "$current_url" ] && [ "$url" = "$current_url" ]; then
+      active="TRUE"
+    fi
+    printf '%s|%s|%s\n' "$active" "$title" "$url" >> "$tmpfile"
+  done < <(awk "NF && \$1 !~ /^#/" "$SOURCES_FILE")
+
+  selected="$(
+    yad --list \
+      --radiolist \
+      --column="Current":RD \
+      --column="Playlist" \
+      --column="URL" \
+      --separator=$'\t' \
+      --print-column=2 \
+      --width=1050 \
+      --height=450 \
+      --title="Choose BGM Playlist" \
+      --center \
+      < "$tmpfile"
   )"
-  if [ -n "$URL" ]; then
-    "$BGM_CTL" seturl "$URL"
+
+  rm -f "$tmpfile"
+
+  selected_url="$(printf '%s' "$selected" | awk -F $'\t' 'NR==1 {print $NF}')"
+  if [ -n "$selected_url" ]; then
+    "$BGM_CTL" seturl "$selected_url"
+  elif [ -n "$selected" ]; then
+    yad --info --title="Choose BGM URL" --text="Could not read the selected URL."
   else
     yad --info --title="Choose BGM URL" --text="No selection made."
   fi
 }
 
+export -f read_current_url
+export -f resolve_source_title
 export -f choose_bgm_url
 
 set_bgm_url() {

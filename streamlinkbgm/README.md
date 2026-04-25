@@ -141,6 +141,8 @@ These commands talk to MPV over its IPC socket:
 
 `bgm_tray.sh` provides a YAD tray menu for quick control and URL management.
 
+`Choose BGM URL...` opens a picker that shows playlist/video titles (resolved with `yt-dlp` when available) and keeps the currently loaded URL pre-selected so you can see what is active before switching.
+
 ### Requirements
 
 - `yad`
