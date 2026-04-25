@@ -7,7 +7,7 @@ exec </dev/null
 YAD="$(command -v yad)"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
-SENDER="${SENDER:-$HOME/.local/bin/mpv_ipc_send}"
+SENDER="${SENDER:-$SCRIPT_DIR/mpv_ipc_send}"
 BGM_CTL="${BGM_CTL:-$SCRIPT_DIR/streamlink_3.sh}"   # <-- point this at streamlink_3.sh
 SOURCES_FILE="${SOURCES_FILE:-$CONFIG_DIR/streamlink_bgm_sources}"
 IPC_PATH="${IPC_PATH:-/tmp/mpv_bgm.sock}"

@@ -16,6 +16,7 @@ If you are using PulseAudio instead of PipeWire, install `pulseaudio` instead of
 - `streamlinkbgm/streamlink_3.sh` — core controller for MPV + Streamlink.
 - `streamlinkbgm/bgm_tray.sh` — optional YAD tray menu.
 - `streamlinkbgm/streamlink_bgm_sources` — example sources list.
+- `streamlinkbgm/mpv_ipc_send` — MPV IPC helper used by the tray script.
 
 ## Configuration paths
 
@@ -65,7 +66,7 @@ disown
 
 You can override paths used by the tray menu:
 
-- `SENDER` — path to `mpv_ipc_send` (defaults to `~/.local/bin/mpv_ipc_send`)
+- `SENDER` — path to `mpv_ipc_send` (defaults to `./mpv_ipc_send` beside `bgm_tray.sh`)
 - `BGM_CTL` — path to `streamlink_3.sh`
 - `SOURCES_FILE` — path to the sources list
 - `IPC_PATH` — path to the MPV IPC socket (defaults to `/tmp/mpv_bgm.sock`)
@@ -102,7 +103,7 @@ The tray icon updates based on MPV state:
 ## Troubleshooting
 
 - If the BGM list is empty, confirm `${XDG_CONFIG_HOME:-$HOME/.config}/streamlink_bgm_sources` has at least one non-comment line.
-- If the tray menu can’t find `mpv_ipc_send`, set `SENDER` before launching `bgm_tray.sh`.
+- If the tray menu can’t find `mpv_ipc_send`, ensure `streamlinkbgm/mpv_ipc_send` is executable or set `SENDER` before launching `bgm_tray.sh`.
 - For stubborn MPV IPC connections, restart the controller:
 
 ```bash
