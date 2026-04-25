@@ -129,12 +129,22 @@ These commands talk to MPV over its IPC socket:
 
 ## Tray controller (optional)
 
+### Included helper
+
+`mpv_ipc_send` now ships in this directory and can also be used directly:
+
+```bash
+./mpv_ipc_send toggle
+./mpv_ipc_send next
+./mpv_ipc_send open
+```
+
 `bgm_tray.sh` provides a YAD tray menu for quick control and URL management.
 
 ### Requirements
 
 - `yad`
-- `mpv_ipc_send` (used by the tray menu to talk to MPV). Put it in `~/.local/bin/mpv_ipc_send` or set `SENDER=/path/to/mpv_ipc_send` before starting the tray script.
+- `mpv_ipc_send` (included in this folder and used by the tray menu to talk to MPV). It defaults to `./mpv_ipc_send`; override with `SENDER=/path/to/mpv_ipc_send` if needed.
 - Optional: `socat` + `jq` (used to detect paused state for the tray icon)
 
 ### Run
@@ -157,7 +167,7 @@ The tray script follows XDG paths and allows overrides:
 - `XDG_CONFIG_HOME` (defaults to `~/.config`)
 - `SOURCES_FILE` (defaults to `$XDG_CONFIG_HOME/streamlink_bgm_sources`)
 - `BGM_CTL` (defaults to the local `streamlink_3.sh`)
-- `SENDER` (defaults to `~/.local/bin/mpv_ipc_send`)
+- `SENDER` (defaults to the local `mpv_ipc_send` in this directory)
 - `IPC_PATH` (defaults to `/tmp/mpv_bgm.sock`)
 
 Example:

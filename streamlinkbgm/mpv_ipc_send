@@ -1,0 +1,68 @@
+#!/bin/bash
+set -euo pipefail
+
+IPC_PATH="${IPC_PATH:-/tmp/mpv_bgm.sock}"
+
+# fail fast if mpv IPC isn't up
+[ -S "$IPC_PATH" ] || exit 2
+
+send() {
+  printf '%s\n' "$1" | socat - "UNIX-CONNECT:${IPC_PATH}" >/dev/null 2>&1
+}
+
+case "${1-}" in
+  toggle)  send '{"command":["cycle","pause"]}' ;;
+  next)    send '{"command":["playlist-next"]}' ;;
+  prev)    send '{"command":["playlist-prev"]}' ;;
+  shuffle) send '{"command":["playlist-shuffle"]}' ;;
+  seekf)   send '{"command":["seek",10,"relative"]}' ;;
+  seekb)   send '{"command":["seek",-10,"relative"]}' ;;
+  volup)   send '{"command":["add","volume",5]}' ;;
+  voldn)   send '{"command":["add","volume",-5]}' ;;
+  open)
+    # Prefer precise time; fall back to plain time-pos
+    get_prop() {
+      printf '%s\n' "{\"command\":[\"get_property\",\"$1\"]}" | socat - "UNIX-CONNECT:${IPC_PATH}" 2>/dev/null
+    }
+
+    # Use jq if available for clean JSON parsing
+    if command -v jq >/dev/null 2>&1; then
+      URL="$(get_prop path | jq -r '.data // empty')"
+      # time-pos can be null briefly on track changes; try precise first
+      TP="$(get_prop time-pos-precise | jq -r '.data // empty')"
+      [ -z "$TP" ] && TP="$(get_prop time-pos | jq -r '.data // empty')"
+    else
+      # Fallback parsing without jq (less robust but OK)
+      URL="$(get_prop path | sed -n 's/.*"data":[ ]*"\([^"]*\)".*/\1/p')"
+      TP="$(get_prop time-pos-precise | sed -n 's/.*"data":[ ]*\([^,}]*\).*/\1/p')"
+      [ -z "$TP" ] && TP="$(get_prop time-pos | sed -n 's/.*"data":[ ]*\([^,}]*\).*/\1/p')"
+    fi
+
+    # If we didn't get a URL, nothing to open
+    [ -z "${URL:-}" ] && exit 0
+
+    # Convert time to integer seconds
+    if [ -n "${TP:-}" ]; then
+      # strip possible quotes and decimals safely
+      TP_SEC="$(printf '%s\n' "$TP" | awk -F. '{print $1}' | tr -cd '0-9')"
+    else
+      TP_SEC=""
+    fi
+
+    # Append ?t= or &t= as appropriate
+    if [ -n "$TP_SEC" ] && [ "$TP_SEC" -gt 0 ] 2>/dev/null; then
+      case "$URL" in
+        *\?*) OPEN_URL="${URL}&t=${TP_SEC}s" ;;
+        *)    OPEN_URL="${URL}?t=${TP_SEC}s" ;;
+      esac
+    else
+      OPEN_URL="$URL"
+    fi
+
+    exec xdg-open "$OPEN_URL"
+    ;;
+  *)
+    printf 'Usage: %s {toggle|next|prev|shuffle|seekf|seekb|volup|voldn|open}\n' "${0##*/}" >&2
+    exit 1
+    ;;
+esac
